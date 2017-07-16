@@ -1,0 +1,15 @@
+D 1.2 95/11/06 21:45:17 kerry
+o Now copes with modern vi's
+o No longer destroys your source files if the Informix compiler loses it's
+  mind so badly that it truncates the .err files
+o Now lets you run vie on a .err file many times before recompilation
+  (was deleting the .err file at the end of vie, which was annoying and
+  somewhat redundant given that a successful compile will remove it anyway)
+
+- Kerry Sainsbury (kerry@kcbbs.gen.nz)
+
+D 1.1 94/03/15 21:45:21 dave 2 1
+TABLE is not required in a form... ATTRIBUTES is.  I now use ^ATTRIBUTES to
+determine if the error file might be a form error file.
+D 1.0 93/12/24 14:01:32 dave 1 0
+Initial version

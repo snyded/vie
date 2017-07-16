@@ -1,0 +1,134 @@
+#!/bin/sh
+
+#   @(#) vie 1.2  95/11/06 21:45:21
+#
+#   vie - views/corrects Informix-4GL error files
+#   Copyright (C) 1993,1994  David A. Snyder
+#                      1995  Kerry Sainsbury (Version 1.2 enhancements)
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; version 2 of the License.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
+# Display copyright information
+(echo "VIE version 1.2, Copyright (C) 1993,1994 David A. Snyder"; echo) >&2
+
+
+# Clear values of some variables
+unset FGL
+unset PER
+
+
+# Make sure that the file exists and strip off the extension
+if [ ! -f "$1" ]
+then
+    echo "$1: No such file or directory." >&2
+    exit 1
+fi
+BFILE=`basename $1 .err`
+
+
+# Determine if the error file is an Informix-4GL source error file
+egrep -i "^GLOBALS|^MAIN|^FUNCTION|^REPORT" ${BFILE}.err >/dev/null 2>&1
+test $? = 0 && FGL=1
+
+# Determine if the error file is an Informix-4GL form error file
+grep -i "^ATTRIBUTES" ${BFILE}.err >/dev/null 2>&1
+test $? = 0 && PER=1
+
+# Bail-out if there was a problem
+if [ "$FGL" -eq 0 -a "$PER" -eq 0 ]
+then
+    echo "$1: Probably not an Informix-4GL error file." >&2
+    exit 1
+elif [ "$FGL" -eq 1 -a "$PER" -eq 1 ]
+then
+    echo "$1: Can not determine the origin of this Informix-4GL error file." >&2
+    exit 1
+fi
+
+# Check to see if compiler has corrupted the .err file...
+if [ "$FGL" -eq 1 ]
+then
+   if [ `cat ${BFILE}.4gl | wc -l` -ne `grep -v "^\|" ${BFILE}.err | wc -l` ]
+   then
+      echo "$1: Compiler seems to have truncated the .err file. Exiting..."
+      exit 1
+   fi
+else
+   if [ `cat ${BFILE}.per | wc -l` -ne `grep -v "^\#" ${BFILE}.err | wc -l` ]
+   then
+      echo "$1: Compiler seems to have truncated the .err file. Exiting..."
+      exit 1
+   fi
+fi
+
+# Edit the error file and place the cursor at the first error
+if [ "$FGL" -eq 1 ]
+then
+# If you are running a *really* old vi you might need to use this line:
+#   vi +/\^\| ${BFILE}.err
+# instead of this one: (ditto for the 'else' block)
+    vi -c "/^|" ${BFILE}.err
+    STAT=$?
+else
+#   vi +/\^\# ${BFILE}.err
+    vi -c "/^#" ${BFILE}.err
+    STAT=$?
+fi
+
+# Bail-out if there was a problem
+if [ $STAT -ne 0 ]
+then
+    echo "$0: VI exited with a non-zero status." >&2
+    exit $STAT
+fi
+
+
+# Create a backup of the source file (just in case :-)
+if [ "$FGL" -eq 1 ]
+then
+    cp ${BFILE}.4gl ${BFILE}.4bl
+    STAT=$?
+else
+    cp ${BFILE}.per ${BFILE}.pbr
+    STAT=$?
+fi
+
+# Bail-out if there was a problem
+if [ $STAT -ne 0 ]
+then
+    exit $STAT
+fi
+
+
+# Replace the error file with the source/form file while deleting error markers
+if [ "$FGL" -eq 1 ]
+then
+    sed '/^|/d' <${BFILE}.err >${BFILE}.4gl
+    STAT=$?
+else
+    sed '/^#/d' <${BFILE}.err >${BFILE}.per
+    STAT=$?
+fi
+
+# Bail-out if there was a problem
+if [ $STAT -ne 0 ]
+then
+    exit $STAT
+fi
+
+
+# Delete the error file and exit
+# rm ${BFILE}.err
+exit $?

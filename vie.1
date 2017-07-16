@@ -1,0 +1,26 @@
+.\"
+.\" @(#) vie 1.2  95/11/06 21:45:21
+.\"
+.TH VIE 1 "vie 1.2"
+.SH NAME
+vie \- views/corrects Informix\-4GL error files
+.SH SYNOPSIS
+vie progname.err
+.SH DESCRIPTION
+.I Vie
+will allow you to view and correct an Informix\-4GL source/form
+error file using "vi".
+.SH OPTIONS
+.TP
+progname.err is the Informix\-4GL source/form error file
+.SH NOTES
+.I Vie
+can be fooled if the words MAIN, FUNCTION, REPORT, GLOBALS, or ATTRIBUTES
+start at the beginning of a line in a file that they normally wouldn't
+be in.
+
+.I Vie
+makes a backup of the Informix-4GL source/form file before replacement
+with the error file.
+.SH SUPPORT
+Send bug reports to Dave Snyder <dave@snide.com>
